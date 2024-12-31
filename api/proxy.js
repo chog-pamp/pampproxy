@@ -1,14 +1,15 @@
 export default async function handler(req, res) {
   // Handle CORS Preflight Requests
   if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    const origin = req.headers.origin || "*"; // Get the origin from the request or fallback to "*"
+    res.setHeader("Access-Control-Allow-Origin", origin); // Allow specific origin
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Custom-Headers");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Custom-Headers, Cookie");
+    res.setHeader("Access-Control-Allow-Credentials", "true"); // Allow credentials (cookies)
     return res.status(204).end();
   }
 
   try {
-    // Extract target URL from query parameters
     const { url } = req.query;
     if (!url || !url.startsWith("http")) {
       return res.status(400).json({ error: "Invalid or missing URL parameter" });
@@ -25,6 +26,11 @@ export default async function handler(req, res) {
     const customHeaders = req.headers["custom-headers"]
       ? JSON.parse(req.headers["custom-headers"])
       : {};
+
+    // Optionally, add cf_clearance cookie if provided in custom headers
+    if (customHeaders["cf_clearance"]) {
+      customHeaders["Cookie"] = `cf_clearance=${customHeaders["cf_clearance"]}`;
+    }
 
     // Merge default headers with custom headers, prioritizing custom headers
     const headers = { ...defaultHeaders, ...customHeaders };
@@ -52,12 +58,14 @@ export default async function handler(req, res) {
       res.setHeader("Set-Cookie", responseHeaders["set-cookie"]);
     }
 
-    // Add CORS headers
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    // Set CORS headers to allow requests from the frontend
+    const origin = req.headers.origin || "*"; // Set the Origin dynamically
+    res.setHeader("Access-Control-Allow-Origin", origin); // Specify allowed origin
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Custom-Headers");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Custom-Headers, Cookie");
+    res.setHeader("Access-Control-Allow-Credentials", "true"); // Allow credentials (cookies)
 
-    // Forward the status and body
+    // Send the status and the body
     res.status(response.status).send(body);
   } catch (err) {
     console.error(err);
