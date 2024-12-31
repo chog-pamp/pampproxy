@@ -45,7 +45,7 @@ To use the proxy, send a request to:
 https://your-vercel-app.vercel.app/api/proxy?url=<TARGET_URL>
 ```
 
-#### Example: Fetch Data
+#### Example: Fetch data
 ```javascript
 async function fetchData() {
   const targetUrl = "https://api.example.com/data";
@@ -64,6 +64,47 @@ async function fetchData() {
   console.log(data);
 }
 fetchData();
+```
+#### Example: Send a login request and save cookie from login
+```javascript
+async function loginAndGetCookie() {
+  // Target login endpoint (the API you want to log in to)
+  const targetUrl = "https://example.com/api/login";
+
+  // Proxy endpoint
+  const proxyUrl = `https://your-vercel-app.vercel.app/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+
+  // Send a POST request through the proxy
+  const response = await fetch(proxyUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      // Use Custom-Headers to specify headers passed to the login endpoint
+      "Custom-Headers": JSON.stringify({
+        "X-Requested-With": "XMLHttpRequest", // Example custom header
+      }),
+    },
+    body: JSON.stringify({
+      username: "your-username", // Replace with actual credentials
+      password: "your-password",
+    }),
+    credentials: "include", // Ensures cookies are sent back to your frontend
+  });
+
+  // Check if login succeeded
+  if (response.ok) {
+    console.log("Login successful.");
+  } else {
+    console.error("Login failed. Status:", response.status);
+  }
+
+  // Access cookies in the browser
+  const cookies = document.cookie; // Browser cookies will now include the session cookie
+  console.log("Cookies:", cookies);
+}
+
+loginAndGetCookie();
+
 ```
 
 ### **Step 2: Customize the Proxy**
